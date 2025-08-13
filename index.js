@@ -1,8 +1,22 @@
-const TelegramBot = require('node-telegram-bot-api');
+// api/bot.js
+import { Bot } from 'grammy';
 
-const token = '7831994077:AAEU_PD617krowEfUw_OAEEyL0neuUZADvs';
-const bot = new TelegramBot(token, { polling: true });
+const bot = new Bot(process.env.BOT_TOKEN);
 
-bot.on('message', (msg) => {
-  bot.sendMessage(msg.chat.id, `Hello ${msg.from.first_name}!`);
-});
+// Example command
+bot.command('start', ctx => ctx.reply('Hello! Your bot is now running on Vercel 🚀'));
+
+// Example reply to any message
+bot.on('message', ctx => ctx.reply(`You said: ${ctx.message.text}`));
+
+export default async function handler(req, res) {
+  if (req.method === 'POST') {
+    try {
+      await bot.handleUpdate(req.body);
+    } catch (err) {
+      console.error(err);
+    }
+    return res.status(200).send('OK');
+  }
+  res.status(200).send('Bot is running...');
+}
