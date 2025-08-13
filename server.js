@@ -12,21 +12,24 @@ const BOT_TOKEN = process.env.BOT_TOKEN;
 const CHAT_ID = process.env.CHAT_ID; // Your own Telegram user ID for testing
 
 // Telegram bot in polling mode
-const bot = new TelegramBot(BOT_TOKEN, { polling: true });
+const TelegramBot = require("node-telegram-bot-api");
+const express = require("express");
 
-// Serve static HTML page
-app.use(express.static("public"));
+const bot = new TelegramBot(process.env.BOT_TOKEN, { webHook: true });
+bot.setWebHook(`${process.env.VERCEL_URL}/api/bot`);
 
-// Browser sends a message → Telegram bot sends it
-io.on("connection", (socket) => {
-  socket.on("sendMessage", (msg) => {
-    bot.sendMessage(CHAT_ID, msg);
-  });
+const app = express();
+app.use(express.json());
+
+// Webhook endpoint
+app.post("/api/bot", (req, res) => {
+  bot.processUpdate(req.body);
+  res.sendStatus(200);
 });
 
-// Telegram → Browser
+// Bot commands
 bot.on("message", (msg) => {
-  io.emit("newMessage", { from: msg.from.first_name, text: msg.text });
+  bot.sendMessage(msg.chat.id, `You said: ${msg.text}`);
 });
 
-server.listen(3000, () => console.log("Server running on http://localhost:3000"));
+module.exports = app;
